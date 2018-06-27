@@ -1,0 +1,89 @@
+{% extends 'admin/base_site.html' %}
+{% load i18n admin_urls static %}
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/dashboard.css" %}"/>
+    <!-- Load c3.css -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.6.2/c3.min.css" rel="stylesheet">
+
+    <!-- Load d3.js and c3.js -->
+    <script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.6.2/c3.min.js"></script>
+    <style>
+        .model-chart {
+            width: 49.5%;
+            float: left;
+            margin: 0 0.25% 0;
+        }
+    </style>
+{% endblock %}
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+        &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+        &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ module_name }}</a>
+        &rsaquo; {% trans 'Charts' %}
+    </div>
+{% endblock %}
+
+{% block content %}
+    <style>
+
+    </style>
+    <h1>{% trans 'Charts' %}</h1>
+    <div id="content-main">
+        <div class="module">
+            {% for chart in charts %}
+                <div class="model-chart">
+                    <h2>{{ chart.0 }}</h2>
+                    <div id="chart-{{ forloop.counter }}"></div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block footer %}
+    {{ block.super }}
+
+    {{ charts.0.1.columns }}
+    <script>
+        var chart = [];
+        {% for chart in charts %}
+            chart.push(
+                c3.generate({
+                    bindto: '#chart-{{ forloop.counter }}',
+                    data: {
+                        columns: [
+                            {% for column, values in chart.1.columns.items %}
+                                [
+                                    '{{ column }}',
+                                    {% for item in values %}
+                                        {{ item.total }},
+                                    {% endfor %}
+                                ],
+                            {% endfor %}
+                        ],
+                        type: '{{ chart.1.type }}'
+                    },
+                    {% if chart.1.axis %}
+                        axis: {
+                            {% if chart.1.axis.x %}
+                            x: {
+                                type: '{{ chart.1.axis.x.type }}',
+                                categories: [
+                                    {% for column, values in chart.1.columns.items %}
+                                        {% for item in values %}
+                                            '{{ item.date_test }}',
+                                        {% endfor %}
+                                    {% endfor %}
+                                ]
+                            }
+                            {% endif %}
+                        }
+                    {% endif %}
+                })
+            );
+        {% endfor %}
+    </script>
+{% endblock %}

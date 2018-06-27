@@ -1,0 +1,13 @@
+version: "2"
+services:
+  django:
+    build: ./django/
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./www/public:/code
+    ports:
+      - "80:8000"
+    environment:
+      - SECRET_KEY=X(3rIh=i\<o|b]D,{P[j}sz*3oA[?NrHo]]})
+      - DEBUG='False'
+      - ALLOWED_HOSTS=*
