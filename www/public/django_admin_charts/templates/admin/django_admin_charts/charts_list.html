@@ -1,8 +1,11 @@
 {% extends 'admin/base_site.html' %}
-{% load i18n admin_urls static %}
+{% load i18n admin_urls static chart_utils %}
+
 {% block extrastyle %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static "admin/css/dashboard.css" %}"/>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
+          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
     <!-- Load c3.css -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.6.2/c3.min.css" rel="stylesheet">
 
@@ -14,6 +17,14 @@
             width: 49.5%;
             float: left;
             margin: 0 0.25% 0;
+        }
+
+        a.section {
+            color: #e3eff5 !important;
+        }
+
+        a.section:hover {
+            color: #fff !important;
         }
     </style>
 {% endblock %}
@@ -35,7 +46,14 @@
         <div class="module">
             {% for chart in charts %}
                 <div class="model-chart">
-                    <h2>{{ chart.0 }}</h2>
+                    <h2>
+                        {{ chart.0 }}
+                        {% if chart.1.filter %}
+                        {% endif %}
+                        <a href="javascript:void(0);" class='section' style="float: right;">
+                            <i class="fas fa-cogs"></i> {% trans 'Filter' %}
+                        </a>
+                    </h2>
                     <div id="chart-{{ forloop.counter }}"></div>
                 </div>
             {% endfor %}
@@ -45,45 +63,49 @@
 
 {% block footer %}
     {{ block.super }}
-
-    {{ charts.0.1.columns }}
     <script>
         var chart = [];
-        {% for chart in charts %}
-            chart.push(
-                c3.generate({
-                    bindto: '#chart-{{ forloop.counter }}',
-                    data: {
-                        columns: [
-                            {% for column, values in chart.1.columns.items %}
-                                [
-                                    '{{ column }}',
-                                    {% for item in values %}
-                                        {{ item.total }},
-                                    {% endfor %}
-                                ],
-                            {% endfor %}
-                        ],
-                        type: '{{ chart.1.type }}'
-                    },
-                    {% if chart.1.axis %}
-                        axis: {
-                            {% if chart.1.axis.x %}
-                            x: {
-                                type: '{{ chart.1.axis.x.type }}',
-                                categories: [
-                                    {% for column, values in chart.1.columns.items %}
-                                        {% for item in values %}
-                                            '{{ item.date_test }}',
-                                        {% endfor %}
-                                    {% endfor %}
-                                ]
+        (function () {
+            {% for chart in charts %}
+                chart.push(
+                    c3.generate({
+                        bindto: '#chart-{{ forloop.counter }}',
+                        data: {
+                            columns: [{% for column, data in chart.1.columns %}
+                                ['{{ column }}', {% if data|is_iterable %}{% for item in data %}'{{ item.total }}', {% endfor %}{% else %}'{{ data }}', {% endif %}],{% endfor %}
+                            ],
+                            type: '{{ chart.1.type }}',
+                        },
+                        {% if chart.1.colors %}
+                            color: {
+                                pattern: [{% for color in chart.1.colors %}'{{ color }}',{% endfor %}]
+                            },
+                        {% endif %}
+                        {% if chart.1.groups %}
+                            groups: [{% for group in chart.1.groups %}
+                                [{% for item in group %}'{{ item }}',{% endfor %}],{% endfor %}
+                            ],
+                        {% endif %}
+                        {% if chart.1.axis %}
+                            axis: {
+                                {% if chart.1.axis.x %}
+                                    x: {
+                                        type: '{{ chart.1.axis.x.type }}',
+                                        categories: [{% for column, values in chart.1.columns %}{% for item in values %}'{{ item.date_test }}', {% endfor %}{% endfor %}]
+                                    },
+                                {% endif %}
+                            },
+                        {% endif %}
+                        {% if chart.1.type != 'donut' and chart.1.type != 'pie' %}
+                            grid: {
+                                y: {
+                                    lines: [{value: 0}]
+                                }
                             }
-                            {% endif %}
-                        }
-                    {% endif %}
-                })
-            );
-        {% endfor %}
+                        {% endif %}
+                    })
+                );
+            {% endfor %}
+        })();
     </script>
 {% endblock %}

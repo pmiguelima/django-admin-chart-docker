@@ -2,10 +2,10 @@
 from __future__ import unicode_literals
 
 from django.contrib import admin
-from django.db.models import Count
 
 from django_admin_charts.admin import ChartModelAdmin
 from .models import MyModel, MyModelRelated
+from .charts import MyModelChartsModel
 
 
 # Register your models here.
@@ -14,7 +14,7 @@ class MyModelRelatedAdmin(ChartModelAdmin, admin.ModelAdmin):
     list_display = [
         'title'
     ]
-    graphics = [
+    charts = [
         (
             'Chart - 1',
             {
@@ -27,14 +27,13 @@ class MyModelRelatedAdmin(ChartModelAdmin, admin.ModelAdmin):
             }
         ),
         (
-            'Chart - 2',
+            'Chart - 3',
             {
-                'type': 'bar',
+                'type': 'line',
                 'axis': {
                     'created_at'
                 },
                 'columns': {
-
                 }
             }
         )
@@ -42,34 +41,7 @@ class MyModelRelatedAdmin(ChartModelAdmin, admin.ModelAdmin):
 
 
 class MyModelAdmin(ChartModelAdmin, admin.ModelAdmin):
-    graphics = [
-        (
-            'Chart - 3',
-            {
-                'type': 'line',
-                'axis': {
-                    'x': {
-                        'type': 'category',
-                        'categories': 'date_test'
-                    }
-                },
-                'columns': {
-                    'my_model': MyModel.objects.all().extra(select={'date_test': 'date( date_test )'}).values(
-                        'date_test').annotate(total=Count('date_test'))
-                }
-            }
-        ),
-        (
-            'Chart - 3',
-            {
-                'type': 'pie',
-                'columns': {
-                    'my_model': MyModel.objects.all()
-                }
-            }
-        ),
-    ]
-
+    chart_class = MyModelChartsModel
 
 admin.site.register(MyModelRelated, MyModelRelatedAdmin)
 admin.site.register(MyModel, MyModelAdmin)
